@@ -1,0 +1,1688 @@
+{
+  "name": "Cierre de caja",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Cierre de caja y conciliación",
+        "formDescription": "Registre los movimientos de efectivo de la jornada. Todos los valores en pesos colombianos (COP), solo números y sin puntos. Si no hubo movimientos en un concepto escriba 0.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Fecha del cierre",
+              "fieldType": "date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Establecimiento",
+              "placeholder": "Ej: Tienda La Esquina",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Responsable del cierre",
+              "placeholder": "Nombre de quien hace el cierre",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Caja o punto de venta (opcional)",
+              "placeholder": "Ej: Caja 1"
+            },
+            {
+              "fieldLabel": "Total de dinero físico encontrado (COP)",
+              "fieldType": "number",
+              "placeholder": "Solo números, sin puntos. Ej: 450000 (0 si no hubo)",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Base inicial del día (COP)",
+              "fieldType": "number",
+              "placeholder": "Solo números, sin puntos. Ej: 450000 (0 si no hubo)",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Ventas en efectivo (COP)",
+              "fieldType": "number",
+              "placeholder": "Solo números, sin puntos. Ej: 450000 (0 si no hubo)",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Consignaciones en efectivo por corresponsal (COP)",
+              "fieldType": "number",
+              "placeholder": "Solo números, sin puntos. Ej: 450000 (0 si no hubo)",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Devoluciones en efectivo (COP)",
+              "fieldType": "number",
+              "placeholder": "Solo números, sin puntos. Ej: 450000 (0 si no hubo)",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Retiros en efectivo por corresponsal (COP)",
+              "fieldType": "number",
+              "placeholder": "Solo números, sin puntos. Ej: 450000 (0 si no hubo)",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Gastos pagados en efectivo (COP)",
+              "fieldType": "number",
+              "placeholder": "Solo números, sin puntos. Ej: 450000 (0 si no hubo)",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Ejecutar cierre"
+        }
+      },
+      "id": "2caadf68-77ac-463e-adf4-87ef1fcc3695",
+      "name": "Formulario de cierre de caja",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -2560,
+        -1488
+      ],
+      "webhookId": "f6d2d495-0953-411d-af9b-390334250161",
+      "notesInFlow": true,
+      "notes": "Datos del cierre"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000002",
+              "name": "url_hoja",
+              "value": "https://docs.google.com/spreadsheets/d/1Kafjuv_P9tgjNhQ91lEMGO7HNopfb43MQt0rzuXDv6g/edit",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000003",
+              "name": "correo_remitente",
+              "value": "Cierre de Caja <onboarding@resend.dev>",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000004",
+              "name": "correo_destino",
+              "value": "estebanpinedaardila2210@gmail.com",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "2f947d46-cd14-4624-a224-a9154a8ba66c",
+      "name": "Configuración",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2352,
+        -1488
+      ],
+      "notesInFlow": true,
+      "notes": "Hoja y correos"
+    },
+    {
+      "parameters": {
+        "url": "https://worldtime.timezone.io/api/timezone/America/Bogota",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 10000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "User-Agent",
+              "value": "n8n-cierre-de-caja"
+            }
+          ]
+        }
+      },
+      "id": "f6a2512b-10f1-44f0-97d1-21403213cbbc",
+      "name": "Consultar hora (WorldTime API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2128,
+        -1488
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 3000,
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "GET hora de Bogotá"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000007",
+              "name": "fecha",
+              "value": "={{ String($('Formulario de cierre de caja').first().json[\"Fecha del cierre\"] ?? '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000008",
+              "name": "establecimiento",
+              "value": "={{ String($('Formulario de cierre de caja').first().json[\"Establecimiento\"] ?? '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000009",
+              "name": "responsable",
+              "value": "={{ String($('Formulario de cierre de caja').first().json[\"Responsable del cierre\"] ?? '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000010",
+              "name": "caja",
+              "value": "={{ String($('Formulario de cierre de caja').first().json[\"Caja o punto de venta (opcional)\"] ?? '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000011",
+              "name": "totalCaja",
+              "value": "={{ (v => typeof v === 'number' ? String(v) : ((t) => /^-?\\d+\\.\\d{1,2}$/.test(t) ? t : t.replace(/\\./g, '').replace(',', '.'))(String(v ?? '').replace(/COP|\\$|\\s/gi, '')))($('Formulario de cierre de caja').first().json[\"Total de dinero físico encontrado (COP)\"]) }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000012",
+              "name": "base",
+              "value": "={{ (v => typeof v === 'number' ? String(v) : ((t) => /^-?\\d+\\.\\d{1,2}$/.test(t) ? t : t.replace(/\\./g, '').replace(',', '.'))(String(v ?? '').replace(/COP|\\$|\\s/gi, '')))($('Formulario de cierre de caja').first().json[\"Base inicial del día (COP)\"]) }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000013",
+              "name": "ventas",
+              "value": "={{ (v => typeof v === 'number' ? String(v) : ((t) => /^-?\\d+\\.\\d{1,2}$/.test(t) ? t : t.replace(/\\./g, '').replace(',', '.'))(String(v ?? '').replace(/COP|\\$|\\s/gi, '')))($('Formulario de cierre de caja').first().json[\"Ventas en efectivo (COP)\"]) }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000014",
+              "name": "consignaciones",
+              "value": "={{ (v => typeof v === 'number' ? String(v) : ((t) => /^-?\\d+\\.\\d{1,2}$/.test(t) ? t : t.replace(/\\./g, '').replace(',', '.'))(String(v ?? '').replace(/COP|\\$|\\s/gi, '')))($('Formulario de cierre de caja').first().json[\"Consignaciones en efectivo por corresponsal (COP)\"]) }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000015",
+              "name": "devoluciones",
+              "value": "={{ (v => typeof v === 'number' ? String(v) : ((t) => /^-?\\d+\\.\\d{1,2}$/.test(t) ? t : t.replace(/\\./g, '').replace(',', '.'))(String(v ?? '').replace(/COP|\\$|\\s/gi, '')))($('Formulario de cierre de caja').first().json[\"Devoluciones en efectivo (COP)\"]) }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000016",
+              "name": "retiros",
+              "value": "={{ (v => typeof v === 'number' ? String(v) : ((t) => /^-?\\d+\\.\\d{1,2}$/.test(t) ? t : t.replace(/\\./g, '').replace(',', '.'))(String(v ?? '').replace(/COP|\\$|\\s/gi, '')))($('Formulario de cierre de caja').first().json[\"Retiros en efectivo por corresponsal (COP)\"]) }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000017",
+              "name": "gastos",
+              "value": "={{ (v => typeof v === 'number' ? String(v) : ((t) => /^-?\\d+\\.\\d{1,2}$/.test(t) ? t : t.replace(/\\./g, '').replace(',', '.'))(String(v ?? '').replace(/COP|\\$|\\s/gi, '')))($('Formulario de cierre de caja').first().json[\"Gastos pagados en efectivo (COP)\"]) }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000018",
+              "name": "entradaOriginal",
+              "value": "={{ $('Formulario de cierre de caja').first().json }}",
+              "type": "object"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000019",
+              "name": "respuestaHora",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dbdd7be8-2c63-422d-aa7b-d0368075c4bc",
+      "name": "Normalizar datos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1904,
+        -1488
+      ],
+      "notesInFlow": true,
+      "notes": "Limpia los montos"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validación y cálculos del cierre de caja\n// X = total en caja - base\n// Y = ventas + consignaciones\n// Z = devoluciones + retiros + gastos\n// esperado = Y - Z, diferencia = X - (Y - Z)\n// Si hay errores no se lanza excepción: se devuelve valido = false con la lista de errores.\n\nconst ZONA_HORARIA = 'America/Bogota';\n\n// Campos de texto obligatorios (clave interna → nombre visible)\nconst CAMPOS_GENERALES = {\n  fecha: 'Fecha del cierre',\n  establecimiento: 'Establecimiento',\n  responsable: 'Responsable del cierre',\n};\n\n// Campos monetarios obligatorios (clave interna → nombre visible)\nconst CAMPOS_MONETARIOS = {\n  totalCaja: 'Total de dinero físico encontrado',\n  base: 'Base inicial del día',\n  ventas: 'Ventas en efectivo',\n  consignaciones: 'Consignaciones en efectivo por corresponsal',\n  devoluciones: 'Devoluciones en efectivo',\n  retiros: 'Retiros en efectivo por corresponsal',\n  gastos: 'Gastos pagados en efectivo',\n};\n\n// null = campo vacío, NaN = valor inválido\nfunction aNumero(valor) {\n  if (typeof valor === 'number') return Number.isFinite(valor) ? valor : NaN;\n  if (valor === null || valor === undefined) return null;\n  const texto = String(valor).trim();\n  if (texto === '') return null;\n  if (!/^-?\\d+(\\.\\d{1,2})?$/.test(texto)) return NaN; // máx. 2 decimales\n  return Number(texto);\n}\n\n// acepta AAAA-MM-DD o DD/MM/AAAA\nfunction normalizarFecha(valor) {\n  const texto = String(valor ?? '').trim();\n  let a, m, d;\n  let r = texto.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\n  if (r) { [, a, m, d] = r; }\n  else {\n    r = texto.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})$/);\n    if (!r) return null;\n    [, d, m, a] = r;\n  }\n  const fecha = new Date(Date.UTC(+a, +m - 1, +d));\n  if (fecha.getUTCFullYear() !== +a || fecha.getUTCMonth() !== +m - 1 || fecha.getUTCDate() !== +d) return null;\n  return `${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;\n}\n\n// hora del servidor en Bogotá\nfunction ahoraBogota() {\n  const p = Object.fromEntries(\n    new Intl.DateTimeFormat('en-CA', {\n      timeZone: ZONA_HORARIA, year: 'numeric', month: '2-digit', day: '2-digit',\n      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',\n    }).formatToParts(new Date()).map(x => [x.type, x.value])\n  );\n  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;\n}\n\n// revisa la respuesta de WorldTime API; si algo falla la hora queda NO DISPONIBLE\n// (los cálculos no dependen de la hora, así que el cierre sigue)\nfunction procesarHora(resp) {\n  const fallo = motivo => ({\n    ok: false, fecha_hora_api: '', utc_datetime_api: '', zona_horaria_api: '', timestamp_api: '',\n    fuente_hora: 'NO DISPONIBLE', detalle_hora_api: `No se pudo obtener la hora de WorldTime API: ${motivo}`,\n  });\n  if (!resp || typeof resp !== 'object') return fallo('no hubo respuesta.');\n  if (resp.error) {\n    const e = resp.error;\n    const msg = String(e.message ?? e.description ?? e);\n    const timeout = /timeout|timed out|ETIMEDOUT|ECONNABORTED/i.test(msg);\n    return fallo(timeout ? `tiempo de espera agotado (${msg}).` : `error de conexión (${msg}).`);\n  }\n  const status = resp.statusCode;\n  if (status !== 200) return fallo(`respuesta HTTP ${status ?? 'desconocida'} (se esperaba 200).`);\n  let body = resp.body ?? resp.data;\n  if (typeof body === 'string') {\n    try { body = JSON.parse(body); } catch (e) { return fallo('la respuesta no es un JSON válido.'); }\n  }\n  if (!body || typeof body !== 'object') return fallo('la respuesta no es un JSON válido.');\n  if (!body.datetime) return fallo('la respuesta no contiene el campo \"datetime\".');\n  if (body.timezone !== ZONA_HORARIA) return fallo(`zona horaria incorrecta (\"${body.timezone}\", se esperaba ${ZONA_HORARIA}).`);\n  if (!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?[+-]\\d{2}:\\d{2}$/.test(body.datetime)) return fallo(`\"datetime\" tiene un formato inesperado (\"${body.datetime}\").`);\n  const ms = Date.parse(body.datetime);\n  if (Number.isNaN(ms)) return fallo('\"datetime\" no es una fecha válida.');\n  if (typeof body.unixtime === 'number' && Math.abs(ms / 1000 - body.unixtime) > 5) {\n    return fallo('\"datetime\" y \"unixtime\" no coinciden.');\n  }\n  return {\n    ok: true,\n    fecha_hora_api: body.datetime,\n    utc_datetime_api: String(body.utc_datetime ?? ''),\n    zona_horaria_api: body.timezone,\n    timestamp_api: typeof body.unixtime === 'number' ? body.unixtime : '',\n    fuente_hora: 'WorldTime API',\n    detalle_hora_api: 'Hora obtenida de https://worldtime.timezone.io/api/timezone/America/Bogota',\n  };\n}\n\n// id único del cierre: CC-fecha-caja-tiempo-aleatorio\nfunction generarId(fecha, caja) {\n  const cajaId = String(caja || 'GEN').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10) || 'GEN';\n  const azar = Math.random().toString(36).slice(2, 7).toUpperCase();\n  return `CC-${fecha.replace(/-/g, '')}-${cajaId}-${Date.now().toString(36).toUpperCase()}-${azar}`;\n}\n\nfunction procesar(d) {\n  const errores = [];\n  const advertencias = [];\n\n  // campos de texto obligatorios\n  const general = {};\n  for (const [clave, nombre] of Object.entries(CAMPOS_GENERALES)) {\n    const v = String(d[clave] ?? '').trim();\n    if (v === '') errores.push(`El campo \"${nombre}\" es obligatorio.`);\n    general[clave] = v;\n  }\n  general.caja = String(d.caja ?? '').trim() || 'No especificada';\n\n  if (general.fecha !== '') {\n    const f = normalizarFecha(general.fecha);\n    if (!f) errores.push(`La fecha \"${general.fecha}\" no es válida. Use el formato AAAA-MM-DD.`);\n    else general.fecha = f;\n  }\n\n  // montos: obligatorios, numéricos y no negativos\n  const valores = {};\n  for (const [clave, nombre] of Object.entries(CAMPOS_MONETARIOS)) {\n    const n = aNumero(d[clave]);\n    if (n === null) errores.push(`El campo \"${nombre}\" es obligatorio (escriba 0 si no hubo movimientos).`);\n    else if (Number.isNaN(n)) errores.push(`El valor de \"${nombre}\" no es un número válido: \"${d[clave]}\".`);\n    else if (n < 0) errores.push(`El campo \"${nombre}\" no puede ser negativo.`);\n    else if (n > 1e12) errores.push(`El valor de \"${nombre}\" es demasiado grande. Verifíquelo.`);\n    else valores[clave] = n;\n  }\n\n  if (errores.length) return { valido: false, errores };\n\n  // cálculos en centavos para no tener problemas con decimales\n  const c = v => Math.round(v * 100);\n  const X = c(valores.totalCaja) - c(valores.base);\n  const Y = c(valores.ventas) + c(valores.consignaciones);\n  const Z = c(valores.devoluciones) + c(valores.retiros) + c(valores.gastos);\n  const esperado = Y - Z;\n  const diferencia = X - esperado;\n\n  for (const n of [X, Y, Z, esperado, diferencia]) {\n    if (!Number.isSafeInteger(n)) throw new Error('Resultado numérico fuera de rango.');\n  }\n\n  const estado = diferencia === 0 ? 'CONCILIADA' : diferencia > 0 ? 'SOBRANTE' : 'FALTANTE';\n\n  if (valores.totalCaja < valores.base) {\n    advertencias.push('El efectivo encontrado es menor que la base inicial del día.');\n  }\n  if (esperado < 0) {\n    advertencias.push('Los egresos registrados superan a los ingresos (efectivo esperado negativo).');\n  }\n\n  const pesos = n => n / 100;\n\n  // hora oficial de procesamiento\n  const horaExterna = procesarHora(d.respuestaHora);\n  if (!horaExterna.ok) advertencias.push(horaExterna.detalle_hora_api);\n\n  // resultado\n  return {\n    valido: true,\n    errores: [],\n    advertencias,\n    cierreId: generarId(general.fecha, d.caja),\n    procesadoEn: new Date().toISOString(),\n    procesadoEnBogota: ahoraBogota(),\n    zonaHoraria: ZONA_HORARIA,\n    horaExterna,\n    moneda: 'COP',\n    general,\n    valoresIngresados: valores,\n    entradaOriginal: d.entradaOriginal ?? null,\n    resultados: {\n      X_efectivoOperativo: pesos(X),\n      Y_totalIngresos: pesos(Y),\n      Z_totalEgresos: pesos(Z),\n      efectivoEsperado: pesos(esperado),\n      diferencia: pesos(diferencia),\n    },\n    estadoCalculado: estado,\n  };\n}\n\nconst salida = [];\nfor (const item of $input.all()) {\n  let resultado;\n  try {\n    resultado = procesar(item.json || {});\n  } catch (e) {\n    resultado = {\n      valido: false,\n      errores: [`Error interno durante los cálculos: ${e.message}. El cierre NO fue procesado.`],\n    };\n  }\n\n  if (!resultado.valido) {\n    const lista = resultado.errores\n      .map(t => '<li>' + String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</li>')\n      .join('');\n    resultado.mensajeErrorHtml =\n      '<div style=\"font-family:Arial,sans-serif;max-width:560px;margin:auto;\">' +\n      '<div style=\"background:#c62828;color:#fff;padding:14px 18px;border-radius:8px 8px 0 0;font-weight:bold;\">' +\n      'CIERRE NO PROCESADO: hay datos inválidos</div>' +\n      '<div style=\"border:1px solid #c62828;border-top:0;padding:14px 18px;border-radius:0 0 8px 8px;\">' +\n      `<ul style=\"margin:0;padding-left:18px;line-height:1.6;\">${lista}</ul>` +\n      '<p style=\"margin:12px 0 0;color:#555;\">Corrija los datos y vuelva a enviar el formulario.</p></div></div>';\n  }\n  salida.push({ json: resultado });\n}\n\nreturn salida;\n"
+      },
+      "id": "c7106918-efc3-4577-9813-6c2d7d8aa6fa",
+      "name": "Validación y cálculos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1680,
+        -1488
+      ],
+      "notesInFlow": true,
+      "notes": "Valida y calcula X, Y, Z"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000022",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7054cc10-df04-40c0-929b-edb546b724de",
+      "name": "¿Datos válidos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1472,
+        -1488
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "={{ $json.mensajeErrorHtml }}"
+      },
+      "id": "98b18246-414b-443f-844d-c837a9e0a0b4",
+      "name": "Mostrar errores de validación",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        -1248,
+        -1232
+      ],
+      "webhookId": "53bd7434-419f-471e-9506-e3f60f8c9afd"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a1b2c3d4-0000-4000-8000-000000000025",
+                    "leftValue": "={{ $json.resultados.diferencia }}",
+                    "rightValue": 0,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CONCILIADA"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a1b2c3d4-0000-4000-8000-000000000026",
+                    "leftValue": "={{ $json.resultados.diferencia }}",
+                    "rightValue": 0,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SOBRANTE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a1b2c3d4-0000-4000-8000-000000000027",
+                    "leftValue": "={{ $json.resultados.diferencia }}",
+                    "rightValue": 0,
+                    "operator": {
+                      "type": "number",
+                      "operation": "lt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "FALTANTE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "571e9051-6147-491a-aa9d-3ee03b8652ff",
+      "name": "Evaluar conciliación",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1248,
+        -1584
+      ],
+      "notesInFlow": true,
+      "notes": "= 0 / > 0 / < 0"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000029",
+              "name": "estado",
+              "value": "CONCILIADA",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000030",
+              "name": "mensaje",
+              "value": "CIERRE EXITOSO: La caja se encuentra correctamente conciliada. No existen diferencias de efectivo.",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000031",
+              "name": "color",
+              "value": "#2e7d32",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000032",
+              "name": "colorFondo",
+              "value": "#e8f5e9",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000033",
+              "name": "asuntoCorreo",
+              "value": "CIERRE DE CAJA - CONCILIACIÓN EXITOSA",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000034",
+              "name": "mensajeCorreo",
+              "value": "El cierre de caja ha finalizado correctamente.\nLa caja se encuentra conciliada y no presenta diferencias de efectivo.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "bfb4ca95-1263-4c4a-bc85-09719e0ed8b1",
+      "name": "Estado: CONCILIADA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1024,
+        -1744
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000036",
+              "name": "estado",
+              "value": "SOBRANTE",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000037",
+              "name": "mensaje",
+              "value": "ALERTA: Se detectó un SOBRANTE de efectivo. Se recomienda verificar los movimientos registrados.",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000038",
+              "name": "color",
+              "value": "#b26a00",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000039",
+              "name": "colorFondo",
+              "value": "#fff8e1",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000040",
+              "name": "asuntoCorreo",
+              "value": "ALERTA - SOBRANTE EN CIERRE DE CAJA",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000041",
+              "name": "mensajeCorreo",
+              "value": "El cierre de caja ha detectado un sobrante de efectivo.\nSe recomienda verificar los movimientos registrados y los soportes correspondientes.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "50b9df14-82b4-4dcb-bf36-55d63904bda8",
+      "name": "Estado: SOBRANTE",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1024,
+        -1584
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000043",
+              "name": "estado",
+              "value": "FALTANTE",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000044",
+              "name": "mensaje",
+              "value": "ALERTA: Se detectó un FALTANTE de efectivo. Se recomienda revisar los movimientos y soportes de caja.",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000045",
+              "name": "color",
+              "value": "#c62828",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000046",
+              "name": "colorFondo",
+              "value": "#ffebee",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000047",
+              "name": "asuntoCorreo",
+              "value": "ALERTA - FALTANTE EN CIERRE DE CAJA",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000048",
+              "name": "mensajeCorreo",
+              "value": "El cierre de caja ha detectado un faltante de efectivo.\nSe recomienda revisar los movimientos registrados y verificar los soportes correspondientes.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "6abc06a6-5b3c-42b9-83bd-557ca782fbe6",
+      "name": "Estado: FALTANTE",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1024,
+        -1424
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Arma el informe en HTML (pantalla y correo) y en texto. Aquí no se calcula nada.\n\n// formato $ 1.250.000 COP\nfunction cop(valor) {\n  const n = Math.round(Number(valor) * 100) / 100;\n  const negativo = n < 0;\n  const abs = Math.abs(n);\n  const entero = Math.trunc(abs).toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.');\n  const centavos = Math.round((abs - Math.trunc(abs)) * 100);\n  const texto = centavos > 0 ? `${entero},${String(centavos).padStart(2, '0')}` : entero;\n  return `${negativo ? '-' : ''}$ ${texto} COP`;\n}\n\nconst esc = s => String(s ?? '')\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n\nconst salida = [];\nfor (const item of $input.all()) {\n  const d = item.json;\n  const g = d.general;\n  const v = d.valoresIngresados;\n  const r = d.resultados;\n\n  const h = d.horaExterna || {};\n  const horaApi = h.ok\n    ? esc(String(h.fecha_hora_api).replace('T', ' ').replace(/\\.\\d+/, ''))\n    : '<span style=\"color:#c62828;\">No disponible</span>';\n\n  const fila = (etiqueta, valor, resaltar = false) =>\n    `<tr><td style=\"padding:6px 10px;border-bottom:1px solid #eee;${resaltar ? 'font-weight:bold;' : ''}\">${etiqueta}</td>` +\n    `<td style=\"padding:6px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;${resaltar ? 'font-weight:bold;' : ''}\">${valor}</td></tr>`;\n\n  const seccion = (titulo, filas) =>\n    `<h3 style=\"margin:18px 0 6px;font-size:15px;color:#333;border-left:4px solid #555;padding-left:8px;\">${titulo}</h3>` +\n    `<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"border-collapse:collapse;font-size:14px;\">${filas}</table>`;\n\n  const advertencias = (d.advertencias || []).length\n    ? `<div style=\"margin-top:14px;padding:10px 12px;background:#fff8e1;border:1px solid #f9a825;border-radius:6px;font-size:13px;\">` +\n      `<b>Observaciones:</b><ul style=\"margin:6px 0 0;padding-left:18px;\">${d.advertencias.map(a => `<li>${esc(a)}</li>`).join('')}</ul></div>`\n    : '';\n\n  const html =\n`<div style=\"font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#222;\">\n  <div style=\"background:#263238;color:#fff;padding:16px 18px;border-radius:8px 8px 0 0;\">\n    <div style=\"font-size:18px;font-weight:bold;\">CIERRE DE CAJA Y CONCILIACIÓN</div>\n    <div style=\"font-size:12px;opacity:.8;margin-top:4px;\">ID: ${esc(d.cierreId)} · Hora del servidor n8n: ${esc(d.procesadoEnBogota)}</div>\n  </div>\n  <div style=\"border:1px solid #ddd;border-top:0;padding:4px 18px 18px;border-radius:0 0 8px 8px;\">\n    ${seccion('Información general',\n      fila('Fecha del cierre', esc(g.fecha)) +\n      fila('Fecha y hora de procesamiento (WorldTime API)', horaApi) +\n      fila('Establecimiento', esc(g.establecimiento)) +\n      fila('Responsable', esc(g.responsable)) +\n      fila('Caja', esc(g.caja)))}\n    ${seccion('Efectivo',\n      fila('Total encontrado en caja', cop(v.totalCaja)) +\n      fila('Base inicial del día', cop(v.base)) +\n      fila('Efectivo operativo (X)', cop(r.X_efectivoOperativo), true))}\n    ${seccion('Ingresos',\n      fila('Ventas en efectivo', cop(v.ventas)) +\n      fila('Consignaciones por corresponsal', cop(v.consignaciones)) +\n      fila('Total de ingresos (Y)', cop(r.Y_totalIngresos), true))}\n    ${seccion('Egresos',\n      fila('Devoluciones', cop(v.devoluciones)) +\n      fila('Retiros por corresponsal', cop(v.retiros)) +\n      fila('Gastos', cop(v.gastos)) +\n      fila('Total de egresos (Z)', cop(r.Z_totalEgresos), true))}\n    ${seccion('Conciliación',\n      fila('Efectivo operativo encontrado (X)', cop(r.X_efectivoOperativo)) +\n      fila('Efectivo esperado (Y - Z)', cop(r.efectivoEsperado)) +\n      fila('Diferencia encontrada', cop(r.diferencia), true))}\n    <div style=\"margin-top:18px;padding:14px 16px;border-radius:8px;background:${d.colorFondo};border:2px solid ${d.color};\">\n      <div style=\"font-size:13px;color:${d.color};font-weight:bold;letter-spacing:.5px;\">RESULTADO: ${esc(d.estado)}</div>\n      <div style=\"font-size:15px;margin-top:6px;\">${esc(d.mensaje)}</div>\n      <div style=\"font-size:20px;font-weight:bold;margin-top:8px;color:${d.color};\">Diferencia: ${cop(r.diferencia)}</div>\n    </div>\n    ${advertencias}\n  </div>\n</div>`;\n\n  const texto = [\n    'CIERRE DE CAJA Y CONCILIACIÓN',\n    `ID: ${d.cierreId}`,\n    `Procesado (WorldTime API): ${h.ok ? h.fecha_hora_api : 'No disponible'}`,\n    `Fecha: ${g.fecha} | Establecimiento: ${g.establecimiento} | Responsable: ${g.responsable} | Caja: ${g.caja}`,\n    `X (efectivo operativo): ${cop(r.X_efectivoOperativo)}`,\n    `Y (ingresos): ${cop(r.Y_totalIngresos)}`,\n    `Z (egresos): ${cop(r.Z_totalEgresos)}`,\n    `Efectivo esperado (Y - Z): ${cop(r.efectivoEsperado)}`,\n    `Diferencia: ${cop(r.diferencia)}`,\n    `RESULTADO: ${d.estado} - ${d.mensaje}`,\n  ].join('\\n');\n\n  // correo: mensaje según el resultado + el mismo informe\n  const correoHtml =\n`<!DOCTYPE html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head>\n<body style=\"margin:0;padding:16px;background:#f4f5f7;\">\n  <div style=\"font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto 14px;padding:14px 18px;background:#fff;border-left:6px solid ${d.color};border-radius:6px;color:#222;font-size:15px;line-height:1.5;\">\n    ${(d.mensajeCorreo || '').split('\\n').map(p => `<p style=\"margin:0 0 6px;\">${esc(p)}</p>`).join('')}\n  </div>\n  <div style=\"background:#fff;max-width:600px;margin:0 auto;border-radius:8px;\">${html}</div>\n</body></html>`;\n\n  salida.push({\n    json: {\n      ...d,\n      asuntoCorreo: d.asuntoCorreo,\n      correoHtml,\n      formato: {\n        totalCaja: cop(v.totalCaja), base: cop(v.base),\n        X: cop(r.X_efectivoOperativo), Y: cop(r.Y_totalIngresos), Z: cop(r.Z_totalEgresos),\n        efectivoEsperado: cop(r.efectivoEsperado), diferencia: cop(r.diferencia),\n      },\n      informeHtml: html,\n      informeTexto: texto,\n    },\n  });\n}\nreturn salida;\n"
+      },
+      "id": "be9a8440-b9be-4055-94d5-8b7efdcfe763",
+      "name": "Generar informe HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        -1584
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000051",
+              "name": "registro.id_cierre",
+              "value": "={{ $json.cierreId }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000052",
+              "name": "registro.procesado_en_utc",
+              "value": "={{ $json.procesadoEn }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000053",
+              "name": "registro.procesado_en_bogota",
+              "value": "={{ $json.procesadoEnBogota }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000054",
+              "name": "registro.fecha_cierre",
+              "value": "={{ $json.general.fecha }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000055",
+              "name": "registro.establecimiento",
+              "value": "={{ $json.general.establecimiento }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000056",
+              "name": "registro.responsable",
+              "value": "={{ $json.general.responsable }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000057",
+              "name": "registro.caja",
+              "value": "={{ $json.general.caja }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000058",
+              "name": "registro.total_caja",
+              "value": "={{ $json.valoresIngresados.totalCaja }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000059",
+              "name": "registro.base_inicial",
+              "value": "={{ $json.valoresIngresados.base }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000060",
+              "name": "registro.ventas_efectivo",
+              "value": "={{ $json.valoresIngresados.ventas }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000061",
+              "name": "registro.consignaciones_corresponsal",
+              "value": "={{ $json.valoresIngresados.consignaciones }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000062",
+              "name": "registro.devoluciones_efectivo",
+              "value": "={{ $json.valoresIngresados.devoluciones }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000063",
+              "name": "registro.retiros_corresponsal",
+              "value": "={{ $json.valoresIngresados.retiros }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000064",
+              "name": "registro.gastos_efectivo",
+              "value": "={{ $json.valoresIngresados.gastos }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000065",
+              "name": "registro.x_efectivo_operativo",
+              "value": "={{ $json.resultados.X_efectivoOperativo }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000066",
+              "name": "registro.y_total_ingresos",
+              "value": "={{ $json.resultados.Y_totalIngresos }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000067",
+              "name": "registro.z_total_egresos",
+              "value": "={{ $json.resultados.Z_totalEgresos }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000068",
+              "name": "registro.efectivo_esperado",
+              "value": "={{ $json.resultados.efectivoEsperado }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000069",
+              "name": "registro.diferencia",
+              "value": "={{ $json.resultados.diferencia }}",
+              "type": "number"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000070",
+              "name": "registro.estado",
+              "value": "={{ $json.estado }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000071",
+              "name": "registro.advertencias",
+              "value": "={{ ($json.advertencias || []).join(' | ') }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000072",
+              "name": "registro.entrada_original_json",
+              "value": "={{ JSON.stringify($json.entradaOriginal) }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000073",
+              "name": "registro.fecha_hora_api",
+              "value": "={{ $json.horaExterna.fecha_hora_api }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000074",
+              "name": "registro.utc_datetime_api",
+              "value": "={{ $json.horaExterna.utc_datetime_api }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000075",
+              "name": "registro.zona_horaria_api",
+              "value": "={{ $json.horaExterna.zona_horaria_api }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000076",
+              "name": "registro.timestamp_api",
+              "value": "={{ String($json.horaExterna.timestamp_api) }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000077",
+              "name": "registro.fuente_hora",
+              "value": "={{ $json.horaExterna.fuente_hora }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000078",
+              "name": "registro.detalle_hora_api",
+              "value": "={{ $json.horaExterna.detalle_hora_api }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000079",
+              "name": "registro.estado_envio_correo",
+              "value": "PENDIENTE",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000080",
+              "name": "registro.fecha_envio_correo",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000081",
+              "name": "registro.identificador_resend",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000082",
+              "name": "registro.detalle_envio_correo",
+              "value": "El correo aún no se ha enviado.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "d0650d0a-2be2-4651-8bc3-77e416c431b4",
+      "name": "Preparar registro para almacenamiento",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -592,
+        -1584
+      ],
+      "notesInFlow": true,
+      "notes": "Fila para Sheets"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $('Configuración').first().json.url_hoja }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "cierres"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_cierre": "={{ $json.registro.id_cierre }}",
+            "procesado_en_utc": "={{ $json.registro.procesado_en_utc }}",
+            "procesado_en_bogota": "={{ $json.registro.procesado_en_bogota }}",
+            "fecha_cierre": "={{ $json.registro.fecha_cierre }}",
+            "establecimiento": "={{ $json.registro.establecimiento }}",
+            "responsable": "={{ $json.registro.responsable }}",
+            "caja": "={{ $json.registro.caja }}",
+            "total_caja": "={{ $json.registro.total_caja }}",
+            "base_inicial": "={{ $json.registro.base_inicial }}",
+            "ventas_efectivo": "={{ $json.registro.ventas_efectivo }}",
+            "consignaciones_corresponsal": "={{ $json.registro.consignaciones_corresponsal }}",
+            "devoluciones_efectivo": "={{ $json.registro.devoluciones_efectivo }}",
+            "retiros_corresponsal": "={{ $json.registro.retiros_corresponsal }}",
+            "gastos_efectivo": "={{ $json.registro.gastos_efectivo }}",
+            "x_efectivo_operativo": "={{ $json.registro.x_efectivo_operativo }}",
+            "y_total_ingresos": "={{ $json.registro.y_total_ingresos }}",
+            "z_total_egresos": "={{ $json.registro.z_total_egresos }}",
+            "efectivo_esperado": "={{ $json.registro.efectivo_esperado }}",
+            "diferencia": "={{ $json.registro.diferencia }}",
+            "estado": "={{ $json.registro.estado }}",
+            "advertencias": "={{ $json.registro.advertencias }}",
+            "entrada_original_json": "={{ $json.registro.entrada_original_json }}",
+            "fecha_hora_api": "={{ $json.registro.fecha_hora_api }}",
+            "utc_datetime_api": "={{ $json.registro.utc_datetime_api }}",
+            "zona_horaria_api": "={{ $json.registro.zona_horaria_api }}",
+            "timestamp_api": "={{ $json.registro.timestamp_api }}",
+            "fuente_hora": "={{ $json.registro.fuente_hora }}",
+            "detalle_hora_api": "={{ $json.registro.detalle_hora_api }}",
+            "estado_envio_correo": "={{ $json.registro.estado_envio_correo }}",
+            "fecha_envio_correo": "={{ $json.registro.fecha_envio_correo }}",
+            "identificador_resend": "={{ $json.registro.identificador_resend }}",
+            "detalle_envio_correo": "={{ $json.registro.detalle_envio_correo }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id_cierre",
+              "displayName": "id_cierre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "procesado_en_utc",
+              "displayName": "procesado_en_utc",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "procesado_en_bogota",
+              "displayName": "procesado_en_bogota",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_cierre",
+              "displayName": "fecha_cierre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "establecimiento",
+              "displayName": "establecimiento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "responsable",
+              "displayName": "responsable",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "caja",
+              "displayName": "caja",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total_caja",
+              "displayName": "total_caja",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "base_inicial",
+              "displayName": "base_inicial",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ventas_efectivo",
+              "displayName": "ventas_efectivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "consignaciones_corresponsal",
+              "displayName": "consignaciones_corresponsal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "devoluciones_efectivo",
+              "displayName": "devoluciones_efectivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "retiros_corresponsal",
+              "displayName": "retiros_corresponsal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gastos_efectivo",
+              "displayName": "gastos_efectivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "x_efectivo_operativo",
+              "displayName": "x_efectivo_operativo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "y_total_ingresos",
+              "displayName": "y_total_ingresos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "z_total_egresos",
+              "displayName": "z_total_egresos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "efectivo_esperado",
+              "displayName": "efectivo_esperado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "diferencia",
+              "displayName": "diferencia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "advertencias",
+              "displayName": "advertencias",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "entrada_original_json",
+              "displayName": "entrada_original_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_hora_api",
+              "displayName": "fecha_hora_api",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "utc_datetime_api",
+              "displayName": "utc_datetime_api",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "zona_horaria_api",
+              "displayName": "zona_horaria_api",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp_api",
+              "displayName": "timestamp_api",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fuente_hora",
+              "displayName": "fuente_hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle_hora_api",
+              "displayName": "detalle_hora_api",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado_envio_correo",
+              "displayName": "estado_envio_correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_envio_correo",
+              "displayName": "fecha_envio_correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "identificador_resend",
+              "displayName": "identificador_resend",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle_envio_correo",
+              "displayName": "detalle_envio_correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "1e8741d9-21c9-4848-9c56-e6fda72cd3f1",
+      "name": "Guardar cierre en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -368,
+        -1584
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZPUApxtxSKGp4vvK",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "Nueva fila (correo PENDIENTE)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-0000-4000-8000-000000000085",
+              "name": "almacenamientoFallido",
+              "value": "={{ true }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8bc72b4-387c-4f64-975a-7f03328f9d03",
+      "name": "Aviso: fallo de almacenamiento",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -144,
+        -1376
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ 'cierre-' + $('Generar informe HTML').first().json.cierreId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: $('Configuración').first().json.correo_remitente, to: String($('Configuración').first().json.correo_destino).split(',').map(s => s.trim()).filter(Boolean), subject: $('Generar informe HTML').first().json.asuntoCorreo, html: $('Generar informe HTML').first().json.correoHtml, text: $('Generar informe HTML').first().json.informeTexto }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "df514157-426f-487f-b289-29d01c698115",
+      "name": "Enviar correo (Resend API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        -1584
+      ],
+      "retryOnFail": false,
+      "notesInFlow": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "DBzAi51xhQKf8lOS",
+          "name": "Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "POST con el informe"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Revisa la respuesta de Resend y deja el estado del envío: ENVIADO o ERROR con el motivo.\n// No se reintenta el envío para no mandar correos repetidos.\nconst ZONA_HORARIA = 'America/Bogota';\nconst informe = $('Generar informe HTML').first().json;\n\nfunction ahoraBogota() {\n  const p = Object.fromEntries(\n    new Intl.DateTimeFormat('en-CA', {\n      timeZone: ZONA_HORARIA, year: 'numeric', month: '2-digit', day: '2-digit',\n      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',\n    }).formatToParts(new Date()).map(x => [x.type, x.value])\n  );\n  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;\n}\n\nfunction evaluar(resp) {\n  if (!resp || typeof resp !== 'object') return { ok: false, detalle: 'No hubo respuesta de Resend.' };\n  if (resp.error) {\n    const msg = String(resp.error.message ?? resp.error.description ?? resp.error);\n    return { ok: false, detalle: `Error de conexión con Resend: ${msg}` };\n  }\n  let body = resp.body ?? resp.data ?? {};\n  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = { message: body }; } }\n  const status = resp.statusCode;\n  const msgApi = body && body.message ? ` Resend dice: \"${body.message}\"` : '';\n\n  if (status === 200 || status === 201) {\n    if (body && body.id) return { ok: true, id: String(body.id), detalle: `Correo aceptado por Resend (HTTP ${status}).` };\n    return { ok: false, detalle: `Resend respondió HTTP ${status} pero sin identificador de envío.` };\n  }\n  const motivos = {\n    400: 'Solicitud inválida.',\n    401: 'Autenticación fallida: falta la API Key o es inválida.',\n    403: 'Sin permiso: API Key sin acceso o remitente/dominio no verificado en Resend.',\n    404: 'Recurso no encontrado.',\n    409: 'Solicitud duplicada (misma Idempotency-Key con otro contenido).',\n    422: 'Datos inválidos: revise el remitente (from) y el destinatario (to).',\n    429: 'Límite de envíos de Resend superado.',\n  };\n  const base = motivos[status] || (status >= 500 ? 'Error interno de Resend.' : 'Error HTTP inesperado.');\n  return { ok: false, detalle: `HTTP ${status ?? 'desconocido'} - ${base}${msgApi}` };\n}\n\nconst r = evaluar($input.first().json);\nreturn [{\n  json: {\n    id_cierre: informe.cierreId,\n    estado_envio_correo: r.ok ? 'ENVIADO' : 'ERROR',\n    fecha_envio_correo: ahoraBogota(),\n    identificador_resend: r.ok ? r.id : '',\n    detalle_envio_correo: r.detalle,\n  },\n}];\n"
+      },
+      "id": "b24a694d-d850-4d20-ac67-d0cb0830f06a",
+      "name": "Evaluar respuesta de Resend",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        -1584
+      ],
+      "notesInFlow": true,
+      "notes": "ENVIADO o ERROR"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $('Configuración').first().json.url_hoja }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "cierres"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_cierre": "={{ $json.id_cierre }}",
+            "estado_envio_correo": "={{ $json.estado_envio_correo }}",
+            "fecha_envio_correo": "={{ $json.fecha_envio_correo }}",
+            "identificador_resend": "={{ $json.identificador_resend }}",
+            "detalle_envio_correo": "={{ $json.detalle_envio_correo }}"
+          },
+          "matchingColumns": [
+            "id_cierre"
+          ],
+          "schema": [
+            {
+              "id": "id_cierre",
+              "displayName": "id_cierre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado_envio_correo",
+              "displayName": "estado_envio_correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_envio_correo",
+              "displayName": "fecha_envio_correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "identificador_resend",
+              "displayName": "identificador_resend",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle_envio_correo",
+              "displayName": "detalle_envio_correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "5e610d73-dd9c-4c26-b14c-d4873ff9d322",
+      "name": "Actualizar estado del correo en Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        528,
+        -1584
+      ],
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "Busca por id_cierre",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZPUApxtxSKGp4vvK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "={{ ($('Aviso: fallo de almacenamiento').isExecuted ? '<div style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto 12px;padding:12px;background:#ffebee;border:2px solid #c62828;border-radius:8px;\">' + '<b>Atención:</b> el cierre se calculó pero NO se pudo guardar en Google Sheets. Conserve este informe y avise al administrador.' + '</div>' : '') + ($('Evaluar respuesta de Resend').isExecuted && $('Evaluar respuesta de Resend').first().json.estado_envio_correo === 'ENVIADO' ? '<div style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto 12px;padding:12px;background:#e8f5e9;border:2px solid #2e7d32;border-radius:8px;\">' + 'Correo enviado al administrador. ID Resend: ' + $('Evaluar respuesta de Resend').first().json.identificador_resend + '</div>' : '') + ($('Evaluar respuesta de Resend').isExecuted && $('Evaluar respuesta de Resend').first().json.estado_envio_correo === 'ERROR' ? '<div style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto 12px;padding:12px;background:#fff8e1;border:2px solid #b26a00;border-radius:8px;\">' + '<b>El correo no se pudo enviar.</b> El cierre sí quedó registrado. Motivo: ' + String($('Evaluar respuesta de Resend').first().json.detalle_envio_correo).replace(/</g, '&lt;') + '</div>' : '') + $('Generar informe HTML').first().json.informeHtml }}"
+      },
+      "id": "f8c3cf01-d582-43c2-83d4-982f9ac023aa",
+      "name": "Mostrar informe de cierre",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -1584
+      ],
+      "webhookId": "2bb64b3b-04b4-4a36-aef3-ed1c50c7fa57"
+    },
+    {
+      "parameters": {
+        "content": "## Cierre de caja\nEl responsable llena el formulario con los datos del día. Luego el flujo consulta la hora de Bogotá, valida los datos, calcula la diferencia y la clasifica como CONCILIADA, SOBRANTE o FALTANTE.\n\nAl final arma el informe, lo guarda en Google Sheets y lo manda por correo.",
+        "height": 300,
+        "width": 700,
+        "color": 7
+      },
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2620,
+        -2010
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Reglas de negocio\nX = total en caja - base del día\nY = ventas + consignaciones\nZ = devoluciones + retiros + gastos\n\nEfectivo esperado = Y - Z\nDiferencia = X - (Y - Z)\n\nDiferencia 0 = CONCILIADA\nMayor a 0 = SOBRANTE\nMenor a 0 = FALTANTE",
+        "height": 400,
+        "width": 760,
+        "color": 4
+      },
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1880,
+        -2010
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## APIs\n**WorldTime API (GET)**: trae la fecha y hora de Bogotá.\nhttps://worldtime.timezone.io/api/timezone/America/Bogota\n\n**Resend (POST)**: manda el informe al correo del administrador. Usa Bearer Token.\nhttps://api.resend.com/emails\n\n**Google Sheets**: cada cierre queda en una fila de la hoja \"cierres\". Después del envío se actualiza el estado del correo.",
+        "height": 400,
+        "width": 1300,
+        "color": 6
+      },
+      "id": "a1000000-0000-4000-8000-000000000003",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -440,
+        -2010
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Si algo falla\n- Datos mal ingresados: se muestra el error y no se guarda nada.\n- Falla la API de hora: el cierre sigue y la hora queda NO DISPONIBLE.\n- Falla el correo: el cierre ya está guardado y queda ERROR en la hoja.\n- Falla Sheets: se avisa en pantalla y el correo se manda igual.",
+        "height": 240,
+        "width": 1100,
+        "color": 3
+      },
+      "id": "a1000000-0000-4000-8000-000000000004",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2620,
+        -1240
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Formulario de cierre de caja": {
+      "main": [
+        [
+          {
+            "node": "Configuración",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuración": {
+      "main": [
+        [
+          {
+            "node": "Consultar hora (WorldTime API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar hora (WorldTime API)": {
+      "main": [
+        [
+          {
+            "node": "Normalizar datos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalizar datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar datos": {
+      "main": [
+        [
+          {
+            "node": "Validación y cálculos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validación y cálculos": {
+      "main": [
+        [
+          {
+            "node": "¿Datos válidos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Datos válidos?": {
+      "main": [
+        [
+          {
+            "node": "Evaluar conciliación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mostrar errores de validación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluar conciliación": {
+      "main": [
+        [
+          {
+            "node": "Estado: CONCILIADA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Estado: SOBRANTE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Estado: FALTANTE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado: CONCILIADA": {
+      "main": [
+        [
+          {
+            "node": "Generar informe HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado: SOBRANTE": {
+      "main": [
+        [
+          {
+            "node": "Generar informe HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado: FALTANTE": {
+      "main": [
+        [
+          {
+            "node": "Generar informe HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar informe HTML": {
+      "main": [
+        [
+          {
+            "node": "Preparar registro para almacenamiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar registro para almacenamiento": {
+      "main": [
+        [
+          {
+            "node": "Guardar cierre en Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar cierre en Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Enviar correo (Resend API)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aviso: fallo de almacenamiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aviso: fallo de almacenamiento": {
+      "main": [
+        [
+          {
+            "node": "Enviar correo (Resend API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar correo (Resend API)": {
+      "main": [
+        [
+          {
+            "node": "Evaluar respuesta de Resend",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Evaluar respuesta de Resend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluar respuesta de Resend": {
+      "main": [
+        [
+          {
+            "node": "Actualizar estado del correo en Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar estado del correo en Sheets": {
+      "main": [
+        [
+          {
+            "node": "Mostrar informe de cierre",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mostrar informe de cierre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "America/Bogota"
+  },
+  "versionId": "9751692d-12f7-43f4-a55e-2fda2ee5cfb6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e8caacdfb9093dd0cd135d4bfcf313682ca024cdb438fc67da14e984c5d755d6"
+  },
+  "nodeGroups": [],
+  "id": "wI4x8GA1SdgFArYK",
+  "tags": []
+}

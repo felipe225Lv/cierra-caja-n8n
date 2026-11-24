@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Def_CierreCaja" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:collaboration id="Colab_CierreCaja">
+    <bpmn:participant id="P_Cierre" name="Cierre de caja" processRef="Proc_CierreCaja" />
+    <bpmn:participant id="P_World" name="WorldTime API" />
+    <bpmn:participant id="P_Sheets" name="Google Sheets" />
+    <bpmn:participant id="P_Resend" name="Resend API" />
+    <bpmn:messageFlow id="M_hora_req" name="GET" sourceRef="Hora" targetRef="P_World" />
+    <bpmn:messageFlow id="M_hora_res" name="JSON datetime" sourceRef="P_World" targetRef="Hora" />
+    <bpmn:messageFlow id="M_guardar" name="Fila nueva" sourceRef="Guardar" targetRef="P_Sheets" />
+    <bpmn:messageFlow id="M_estado" name="Actualizar fila" sourceRef="Estado" targetRef="P_Sheets" />
+    <bpmn:messageFlow id="M_correo_req" name="POST" sourceRef="Correo" targetRef="P_Resend" />
+    <bpmn:messageFlow id="M_correo_res" name="id del correo" sourceRef="P_Resend" targetRef="Correo" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proc_CierreCaja" name="Cierre de caja y conciliación" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_resp" name="Responsable de caja">
+        <bpmn:flowNodeRef>Inicio</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Registrar</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_n8n" name="n8n (automatización)">
+        <bpmn:flowNodeRef>Hora</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Validar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GwValido</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Errores</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>FinRechazo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Totales</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Diferencia</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GwResultado</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Conciliada</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Sobrante</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Faltante</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GwUnion</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Informe</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Guardar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Correo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Estado</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Mostrar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Fin</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Inicio" name="Fin de la jornada">
+      <bpmn:outgoing>F_Inicio_Registrar</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Registrar" name="Registrar datos del cierre en el formulario">
+      <bpmn:incoming>F_Inicio_Registrar</bpmn:incoming>
+      <bpmn:outgoing>F_Registrar_Hora</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sendTask id="Hora" name="Consultar fecha y hora de Bogotá (HTTP GET)">
+      <bpmn:incoming>F_Registrar_Hora</bpmn:incoming>
+      <bpmn:outgoing>F_Hora_Validar</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:scriptTask id="Validar" name="Normalizar y validar datos">
+      <bpmn:incoming>F_Hora_Validar</bpmn:incoming>
+      <bpmn:outgoing>F_Validar_GwValido</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="GwValido" name="¿Datos válidos?" default="F_GwValido_Errores">
+      <bpmn:incoming>F_Validar_GwValido</bpmn:incoming>
+      <bpmn:outgoing>F_GwValido_Totales</bpmn:outgoing>
+      <bpmn:outgoing>F_GwValido_Errores</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Errores" name="Mostrar errores de validación">
+      <bpmn:incoming>F_GwValido_Errores</bpmn:incoming>
+      <bpmn:outgoing>F_Errores_FinRechazo</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="FinRechazo" name="Cierre rechazado">
+      <bpmn:incoming>F_Errores_FinRechazo</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:scriptTask id="Totales" name="Calcular X, Y y Z">
+      <bpmn:incoming>F_GwValido_Totales</bpmn:incoming>
+      <bpmn:outgoing>F_Totales_Diferencia</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:scriptTask id="Diferencia" name="Calcular efectivo esperado y diferencia">
+      <bpmn:incoming>F_Totales_Diferencia</bpmn:incoming>
+      <bpmn:outgoing>F_Diferencia_GwResultado</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="GwResultado" name="Resultado de la diferencia">
+      <bpmn:incoming>F_Diferencia_GwResultado</bpmn:incoming>
+      <bpmn:outgoing>F_GwResultado_Conciliada</bpmn:outgoing>
+      <bpmn:outgoing>F_GwResultado_Sobrante</bpmn:outgoing>
+      <bpmn:outgoing>F_GwResultado_Faltante</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:businessRuleTask id="Conciliada" name="Clasificar como CONCILIADA">
+      <bpmn:incoming>F_GwResultado_Conciliada</bpmn:incoming>
+      <bpmn:outgoing>F_Conciliada_GwUnion</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:businessRuleTask id="Sobrante" name="Clasificar como SOBRANTE">
+      <bpmn:incoming>F_GwResultado_Sobrante</bpmn:incoming>
+      <bpmn:outgoing>F_Sobrante_GwUnion</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:businessRuleTask id="Faltante" name="Clasificar como FALTANTE">
+      <bpmn:incoming>F_GwResultado_Faltante</bpmn:incoming>
+      <bpmn:outgoing>F_Faltante_GwUnion</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:exclusiveGateway id="GwUnion" name="">
+      <bpmn:incoming>F_Conciliada_GwUnion</bpmn:incoming>
+      <bpmn:incoming>F_Sobrante_GwUnion</bpmn:incoming>
+      <bpmn:incoming>F_Faltante_GwUnion</bpmn:incoming>
+      <bpmn:outgoing>F_GwUnion_Informe</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="Informe" name="Generar informe HTML">
+      <bpmn:incoming>F_GwUnion_Informe</bpmn:incoming>
+      <bpmn:outgoing>F_Informe_Guardar</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:serviceTask id="Guardar" name="Guardar cierre en Google Sheets">
+      <bpmn:incoming>F_Informe_Guardar</bpmn:incoming>
+      <bpmn:outgoing>F_Guardar_Correo</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sendTask id="Correo" name="Enviar informe por correo (HTTP POST)">
+      <bpmn:incoming>F_Guardar_Correo</bpmn:incoming>
+      <bpmn:outgoing>F_Correo_Estado</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:serviceTask id="Estado" name="Registrar estado del envío">
+      <bpmn:incoming>F_Correo_Estado</bpmn:incoming>
+      <bpmn:outgoing>F_Estado_Mostrar</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Mostrar" name="Mostrar informe al responsable">
+      <bpmn:incoming>F_Estado_Mostrar</bpmn:incoming>
+      <bpmn:outgoing>F_Mostrar_Fin</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Fin" name="Cierre finalizado">
+      <bpmn:incoming>F_Mostrar_Fin</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="F_Inicio_Registrar" sourceRef="Inicio" targetRef="Registrar" />
+    <bpmn:sequenceFlow id="F_Registrar_Hora" sourceRef="Registrar" targetRef="Hora" />
+    <bpmn:sequenceFlow id="F_Hora_Validar" sourceRef="Hora" targetRef="Validar" />
+    <bpmn:sequenceFlow id="F_Validar_GwValido" sourceRef="Validar" targetRef="GwValido" />
+    <bpmn:sequenceFlow id="F_GwValido_Totales" name="Sí" sourceRef="GwValido" targetRef="Totales" />
+    <bpmn:sequenceFlow id="F_GwValido_Errores" name="No" sourceRef="GwValido" targetRef="Errores" />
+    <bpmn:sequenceFlow id="F_Errores_FinRechazo" sourceRef="Errores" targetRef="FinRechazo" />
+    <bpmn:sequenceFlow id="F_Totales_Diferencia" sourceRef="Totales" targetRef="Diferencia" />
+    <bpmn:sequenceFlow id="F_Diferencia_GwResultado" sourceRef="Diferencia" targetRef="GwResultado" />
+    <bpmn:sequenceFlow id="F_GwResultado_Conciliada" name="= 0" sourceRef="GwResultado" targetRef="Conciliada" />
+    <bpmn:sequenceFlow id="F_GwResultado_Sobrante" name="&gt; 0" sourceRef="GwResultado" targetRef="Sobrante" />
+    <bpmn:sequenceFlow id="F_GwResultado_Faltante" name="&lt; 0" sourceRef="GwResultado" targetRef="Faltante" />
+    <bpmn:sequenceFlow id="F_Conciliada_GwUnion" sourceRef="Conciliada" targetRef="GwUnion" />
+    <bpmn:sequenceFlow id="F_Sobrante_GwUnion" sourceRef="Sobrante" targetRef="GwUnion" />
+    <bpmn:sequenceFlow id="F_Faltante_GwUnion" sourceRef="Faltante" targetRef="GwUnion" />
+    <bpmn:sequenceFlow id="F_GwUnion_Informe" sourceRef="GwUnion" targetRef="Informe" />
+    <bpmn:sequenceFlow id="F_Informe_Guardar" sourceRef="Informe" targetRef="Guardar" />
+    <bpmn:sequenceFlow id="F_Guardar_Correo" sourceRef="Guardar" targetRef="Correo" />
+    <bpmn:sequenceFlow id="F_Correo_Estado" sourceRef="Correo" targetRef="Estado" />
+    <bpmn:sequenceFlow id="F_Estado_Mostrar" sourceRef="Estado" targetRef="Mostrar" />
+    <bpmn:sequenceFlow id="F_Mostrar_Fin" sourceRef="Mostrar" targetRef="Fin" />
+    <bpmn:textAnnotation id="N1"><bpmn:text>Si la API no responde, el cierre sigue con la hora &quot;NO DISPONIBLE&quot;.</bpmn:text></bpmn:textAnnotation>
+    <bpmn:association id="A_N1" sourceRef="Hora" targetRef="N1" />
+    <bpmn:textAnnotation id="N2"><bpmn:text>Si el correo falla, el cierre ya quedó guardado y se registra ERROR.</bpmn:text></bpmn:textAnnotation>
+    <bpmn:association id="A_N2" sourceRef="Estado" targetRef="N2" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1"><bpmndi:BPMNPlane id="Plane_1" bpmnElement="Colab_CierreCaja">
+    <bpmndi:BPMNShape id="P_Cierre_di" bpmnElement="P_Cierre" isHorizontal="true"><dc:Bounds x="0" y="0" width="2330" height="490" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Lane_resp_di" bpmnElement="Lane_resp" isHorizontal="true"><dc:Bounds x="30" y="0" width="2300" height="160" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Lane_n8n_di" bpmnElement="Lane_n8n" isHorizontal="true"><dc:Bounds x="30" y="160" width="2300" height="330" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="P_World_di" bpmnElement="P_World" isHorizontal="true"><dc:Bounds x="300" y="560" width="180" height="60" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="P_Sheets_di" bpmnElement="P_Sheets" isHorizontal="true"><dc:Bounds x="1540" y="560" width="500" height="60" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="P_Resend_di" bpmnElement="P_Resend" isHorizontal="true"><dc:Bounds x="1700" y="-120" width="180" height="60" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Inicio_di" bpmnElement="Inicio"><dc:Bounds x="90" y="62" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="58" y="102" width="100" height="28" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Registrar_di" bpmnElement="Registrar"><dc:Bounds x="170" y="40" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Hora_di" bpmnElement="Hora"><dc:Bounds x="330" y="285" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Validar_di" bpmnElement="Validar"><dc:Bounds x="490" y="285" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="GwValido_di" bpmnElement="GwValido" isMarkerVisible="true"><dc:Bounds x="650" y="300" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="620" y="266" width="110" height="28" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Errores_di" bpmnElement="Errores"><dc:Bounds x="730" y="385" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="FinRechazo_di" bpmnElement="FinRechazo"><dc:Bounds x="890" y="407" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="858" y="447" width="100" height="28" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Totales_di" bpmnElement="Totales"><dc:Bounds x="750" y="285" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Diferencia_di" bpmnElement="Diferencia"><dc:Bounds x="910" y="285" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="GwResultado_di" bpmnElement="GwResultado" isMarkerVisible="true"><dc:Bounds x="1070" y="300" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="1040" y="266" width="110" height="28" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Conciliada_di" bpmnElement="Conciliada"><dc:Bounds x="1160" y="185" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Sobrante_di" bpmnElement="Sobrante"><dc:Bounds x="1160" y="285" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Faltante_di" bpmnElement="Faltante"><dc:Bounds x="1160" y="385" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="GwUnion_di" bpmnElement="GwUnion" isMarkerVisible="true"><dc:Bounds x="1320" y="300" width="50" height="50" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Informe_di" bpmnElement="Informe"><dc:Bounds x="1410" y="285" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Guardar_di" bpmnElement="Guardar"><dc:Bounds x="1570" y="285" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Correo_di" bpmnElement="Correo"><dc:Bounds x="1730" y="285" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Estado_di" bpmnElement="Estado"><dc:Bounds x="1890" y="285" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Mostrar_di" bpmnElement="Mostrar"><dc:Bounds x="2050" y="285" width="120" height="80" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="Fin_di" bpmnElement="Fin"><dc:Bounds x="2220" y="307" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="2188" y="347" width="100" height="28" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+    <bpmndi:BPMNEdge id="F_Inicio_Registrar_di" bpmnElement="F_Inicio_Registrar"><di:waypoint x="126" y="80" /><di:waypoint x="170" y="80" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Registrar_Hora_di" bpmnElement="F_Registrar_Hora"><di:waypoint x="230" y="120" /><di:waypoint x="230" y="325" /><di:waypoint x="330" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Hora_Validar_di" bpmnElement="F_Hora_Validar"><di:waypoint x="450" y="325" /><di:waypoint x="490" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Validar_GwValido_di" bpmnElement="F_Validar_GwValido"><di:waypoint x="610" y="325" /><di:waypoint x="650" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_GwValido_Totales_di" bpmnElement="F_GwValido_Totales"><di:waypoint x="700" y="325" /><di:waypoint x="750" y="325" /><bpmndi:BPMNLabel><dc:Bounds x="729" y="303" width="30" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_GwValido_Errores_di" bpmnElement="F_GwValido_Errores"><di:waypoint x="675" y="350" /><di:waypoint x="675" y="425" /><di:waypoint x="730" y="425" /><bpmndi:BPMNLabel><dc:Bounds x="679" y="403" width="30" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Errores_FinRechazo_di" bpmnElement="F_Errores_FinRechazo"><di:waypoint x="850" y="425" /><di:waypoint x="890" y="425" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Totales_Diferencia_di" bpmnElement="F_Totales_Diferencia"><di:waypoint x="870" y="325" /><di:waypoint x="910" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Diferencia_GwResultado_di" bpmnElement="F_Diferencia_GwResultado"><di:waypoint x="1030" y="325" /><di:waypoint x="1070" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_GwResultado_Conciliada_di" bpmnElement="F_GwResultado_Conciliada"><di:waypoint x="1095" y="300" /><di:waypoint x="1095" y="225" /><di:waypoint x="1160" y="225" /><bpmndi:BPMNLabel><dc:Bounds x="1099" y="203" width="30" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_GwResultado_Sobrante_di" bpmnElement="F_GwResultado_Sobrante"><di:waypoint x="1120" y="325" /><di:waypoint x="1160" y="325" /><bpmndi:BPMNLabel><dc:Bounds x="1144" y="303" width="30" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_GwResultado_Faltante_di" bpmnElement="F_GwResultado_Faltante"><di:waypoint x="1095" y="350" /><di:waypoint x="1095" y="425" /><di:waypoint x="1160" y="425" /><bpmndi:BPMNLabel><dc:Bounds x="1099" y="403" width="30" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Conciliada_GwUnion_di" bpmnElement="F_Conciliada_GwUnion"><di:waypoint x="1280" y="225" /><di:waypoint x="1345" y="225" /><di:waypoint x="1345" y="300" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Sobrante_GwUnion_di" bpmnElement="F_Sobrante_GwUnion"><di:waypoint x="1280" y="325" /><di:waypoint x="1320" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Faltante_GwUnion_di" bpmnElement="F_Faltante_GwUnion"><di:waypoint x="1280" y="425" /><di:waypoint x="1345" y="425" /><di:waypoint x="1345" y="350" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_GwUnion_Informe_di" bpmnElement="F_GwUnion_Informe"><di:waypoint x="1370" y="325" /><di:waypoint x="1410" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Informe_Guardar_di" bpmnElement="F_Informe_Guardar"><di:waypoint x="1530" y="325" /><di:waypoint x="1570" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Guardar_Correo_di" bpmnElement="F_Guardar_Correo"><di:waypoint x="1690" y="325" /><di:waypoint x="1730" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Correo_Estado_di" bpmnElement="F_Correo_Estado"><di:waypoint x="1850" y="325" /><di:waypoint x="1890" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Estado_Mostrar_di" bpmnElement="F_Estado_Mostrar"><di:waypoint x="2010" y="325" /><di:waypoint x="2050" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="F_Mostrar_Fin_di" bpmnElement="F_Mostrar_Fin"><di:waypoint x="2170" y="325" /><di:waypoint x="2220" y="325" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="M_hora_req_di" bpmnElement="M_hora_req"><di:waypoint x="370" y="365" /><di:waypoint x="370" y="560" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="M_hora_res_di" bpmnElement="M_hora_res"><di:waypoint x="410" y="560" /><di:waypoint x="410" y="365" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="M_guardar_di" bpmnElement="M_guardar"><di:waypoint x="1630" y="365" /><di:waypoint x="1630" y="560" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="M_estado_di" bpmnElement="M_estado"><di:waypoint x="1950" y="365" /><di:waypoint x="1950" y="560" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="M_correo_req_di" bpmnElement="M_correo_req"><di:waypoint x="1770" y="285" /><di:waypoint x="1770" y="-60" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge id="M_correo_res_di" bpmnElement="M_correo_res"><di:waypoint x="1810" y="-60" /><di:waypoint x="1810" y="285" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNShape id="N1_di" bpmnElement="N1"><dc:Bounds x="450" y="420" width="200" height="52" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNEdge id="A_N1_di" bpmnElement="A_N1"><di:waypoint x="450" y="365" /><di:waypoint x="450" y="446" /></bpmndi:BPMNEdge>
+    <bpmndi:BPMNShape id="N2_di" bpmnElement="N2"><dc:Bounds x="2060" y="420" width="220" height="52" /></bpmndi:BPMNShape>
+    <bpmndi:BPMNEdge id="A_N2_di" bpmnElement="A_N2"><di:waypoint x="2010" y="365" /><di:waypoint x="2060" y="446" /></bpmndi:BPMNEdge>
+  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>
